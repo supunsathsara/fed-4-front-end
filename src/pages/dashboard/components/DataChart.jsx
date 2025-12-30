@@ -48,7 +48,7 @@ const DataChart = ({ solarUnitId }) => {
   const chartConfig = {
     energy: {
       label: "Energy (kWh)",
-      color: "oklch(54.6% 0.245 262.881)",
+      color: "oklch(0.7 0.18 55)",
     },
   };
 

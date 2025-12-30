@@ -1,10 +1,11 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-const baseUrl = "http://localhost:8000/api";
+const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 // Define a service using a base URL and expected endpoints
 export const api = createApi({
   reducerPath: "api",
+  tagTypes: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats'],
   baseQuery: fetchBaseQuery({ baseUrl: baseUrl, prepareHeaders: async (headers) => {
     const clerk = window.Clerk;
     if (clerk) {
@@ -45,9 +46,105 @@ export const api = createApi({
     getAllUsers: build.query({
       query: () => `/users`,
     }),
+    getWeatherData: build.query({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.lat) searchParams.append('lat', params.lat);
+        if (params?.lon) searchParams.append('lon', params.lon);
+        return `/weather?${searchParams.toString()}`;
+      },
+    }),
+    getCapacityFactor: build.query({
+      query: ({solarUnitId, days}) => `/energy-generation-records/capacity-factor/${solarUnitId}?days=${days || 7}`,
+    }),
+    // Anomaly endpoints
+    getMyAnomalies: build.query({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.type) searchParams.append('type', params.type);
+        if (params?.severity) searchParams.append('severity', params.severity);
+        if (params?.status) searchParams.append('status', params.status);
+        if (params?.limit) searchParams.append('limit', params.limit);
+        return `/anomalies/my?${searchParams.toString()}`;
+      },
+      providesTags: ['Anomalies'],
+    }),
+    getMyAnomalyStats: build.query({
+      query: () => `/anomalies/my/stats`,
+      providesTags: ['AnomalyStats'],
+    }),
+    getAnomalyTypes: build.query({
+      query: () => `/anomalies/types`,
+    }),
+    getAllAnomalies: build.query({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.type) searchParams.append('type', params.type);
+        if (params?.severity) searchParams.append('severity', params.severity);
+        if (params?.status) searchParams.append('status', params.status);
+        if (params?.limit) searchParams.append('limit', params.limit);
+        if (params?.offset) searchParams.append('offset', params.offset);
+        return `/anomalies?${searchParams.toString()}`;
+      },
+      providesTags: ['AdminAnomalies'],
+    }),
+    getAdminAnomalyStats: build.query({
+      query: () => `/anomalies/stats`,
+      providesTags: ['AdminAnomalyStats'],
+    }),
+    acknowledgeAnomaly: build.mutation({
+      query: (anomalyId) => ({
+        url: `/anomalies/${anomalyId}/acknowledge`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats'],
+    }),
+    resolveAnomaly: build.mutation({
+      query: ({ anomalyId, notes }) => ({
+        url: `/anomalies/${anomalyId}/resolve`,
+        method: 'POST',
+        body: { notes },
+      }),
+      invalidatesTags: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats'],
+    }),
+    markAnomalyFalsePositive: build.mutation({
+      query: ({ anomalyId, notes }) => ({
+        url: `/anomalies/${anomalyId}/false-positive`,
+        method: 'POST',
+        body: { notes },
+      }),
+      invalidatesTags: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats'],
+    }),
+    triggerAnomalyDetection: build.mutation({
+      query: () => ({
+        url: `/anomalies/trigger-detection`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats'],
+    }),
   }),
 });
 
 // Export hooks for usage in functional components, which are
 // auto-generated based on the defined endpoints
-export const { useGetAllUsersQuery, useGetEnergyGenerationRecordsBySolarUnitQuery, useGetSolarUnitForUserQuery, useGetSolarUnitsQuery, useGetSolarUnitByIdQuery, useCreateSolarUnitMutation, useEditSolarUnitMutation } = api;
+export const { 
+  useGetAllUsersQuery, 
+  useGetEnergyGenerationRecordsBySolarUnitQuery, 
+  useGetSolarUnitForUserQuery, 
+  useGetSolarUnitsQuery, 
+  useGetSolarUnitByIdQuery, 
+  useCreateSolarUnitMutation, 
+  useEditSolarUnitMutation,
+  useGetWeatherDataQuery,
+  useGetCapacityFactorQuery,
+  // Anomaly hooks
+  useGetMyAnomaliesQuery,
+  useGetMyAnomalyStatsQuery,
+  useGetAnomalyTypesQuery,
+  useGetAllAnomaliesQuery,
+  useGetAdminAnomalyStatsQuery,
+  useAcknowledgeAnomalyMutation,
+  useResolveAnomalyMutation,
+  useMarkAnomalyFalsePositiveMutation,
+  useTriggerAnomalyDetectionMutation,
+} = api;

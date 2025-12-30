@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useLocation } from "react-router";
 import { cn } from "@/lib/utils";
+import { SolarPulseLogoLink } from "@/components/Logo";
 
 // Menu items.
 const items = [
@@ -55,8 +56,8 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-3xl font-bold text-foreground">
-            <Link to="/">Aelora</Link>
+          <SidebarGroupLabel className="text-3xl font-bold text-foreground py-6">
+            <SolarPulseLogoLink size="small" />
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="mt-4 text">
