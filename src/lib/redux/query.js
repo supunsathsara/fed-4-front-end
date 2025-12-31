@@ -5,7 +5,7 @@ const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"
 // Define a service using a base URL and expected endpoints
 export const api = createApi({
   reducerPath: "api",
-  tagTypes: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats'],
+  tagTypes: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats', 'Invoices', 'InvoiceCounts'],
   baseQuery: fetchBaseQuery({ baseUrl: baseUrl, prepareHeaders: async (headers) => {
     const clerk = window.Clerk;
     if (clerk) {
@@ -45,6 +45,9 @@ export const api = createApi({
     }),
     getAllUsers: build.query({
       query: () => `/users`,
+    }),
+    getCurrentUser: build.query({
+      query: () => `/users/me`,
     }),
     getWeatherData: build.query({
       query: (params) => {
@@ -122,13 +125,61 @@ export const api = createApi({
       }),
       invalidatesTags: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats'],
     }),
+    // Invoice endpoints
+    getInvoices: build.query({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.status) searchParams.append('status', params.status);
+        if (params?.limit) searchParams.append('limit', params.limit);
+        if (params?.offset) searchParams.append('offset', params.offset);
+        return `/invoices?${searchParams.toString()}`;
+      },
+      providesTags: ['Invoices'],
+    }),
+    getInvoiceById: build.query({
+      query: (id) => `/invoices/${id}`,
+      providesTags: ['Invoices'],
+    }),
+    getPendingInvoiceCount: build.query({
+      query: () => `/invoices/pending-count`,
+      providesTags: ['InvoiceCounts'],
+    }),
+    getAdminInvoices: build.query({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.status) searchParams.append('status', params.status);
+        if (params?.limit) searchParams.append('limit', params.limit);
+        if (params?.offset) searchParams.append('offset', params.offset);
+        return `/invoices/admin/all?${searchParams.toString()}`;
+      },
+      providesTags: ['Invoices'],
+    }),
+    triggerInvoiceGeneration: build.mutation({
+      query: () => ({
+        url: `/invoices/generate`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Invoices', 'InvoiceCounts'],
+    }),
+    // Payment endpoints
+    createPaymentSession: build.mutation({
+      query: (invoiceId) => ({
+        url: `/payments/create-checkout-session`,
+        method: 'POST',
+        body: { invoiceId },
+      }),
+    }),
+    getSessionStatus: build.query({
+      query: (sessionId) => `/payments/session-status?session_id=${sessionId}`,
+    }),
   }),
 });
 
 // Export hooks for usage in functional components, which are
 // auto-generated based on the defined endpoints
 export const { 
-  useGetAllUsersQuery, 
+  useGetAllUsersQuery,
+  useGetCurrentUserQuery,
   useGetEnergyGenerationRecordsBySolarUnitQuery, 
   useGetSolarUnitForUserQuery, 
   useGetSolarUnitsQuery, 
@@ -147,4 +198,13 @@ export const {
   useResolveAnomalyMutation,
   useMarkAnomalyFalsePositiveMutation,
   useTriggerAnomalyDetectionMutation,
+  // Invoice hooks
+  useGetInvoicesQuery,
+  useGetInvoiceByIdQuery,
+  useGetPendingInvoiceCountQuery,
+  useGetAdminInvoicesQuery,
+  useTriggerInvoiceGenerationMutation,
+  // Payment hooks
+  useCreatePaymentSessionMutation,
+  useGetSessionStatusQuery,
 } = api;

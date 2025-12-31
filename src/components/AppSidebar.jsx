@@ -1,4 +1,4 @@
-import { ChartLine, LayoutDashboard, TriangleAlert } from "lucide-react";
+import { ChartLine, LayoutDashboard, TriangleAlert, FileText } from "lucide-react";
 import { Link } from "react-router";
 import {
   Sidebar,
@@ -9,10 +9,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuBadge,
 } from "@/components/ui/sidebar";
 import { useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { SolarPulseLogoLink } from "@/components/Logo";
+import { useGetPendingInvoiceCountQuery } from "@/lib/redux/query";
 
 // Menu items.
 const items = [
@@ -27,13 +29,19 @@ const items = [
     icon: <TriangleAlert className="w-8 h-8" size={32} />,
   },
   {
+    title: "Invoices",
+    url: "/dashboard/invoices",
+    icon: <FileText className="w-8 h-8" size={32} />,
+    hasBadge: true,
+  },
+  {
     title: "Analytics",
     url: "/dashboard/analytics",
     icon: <ChartLine className="w-8 h-8" size={32} />,
   },
 ];
 
-const SideBarTab = ({ item }) => {
+const SideBarTab = ({ item, pendingCount }) => {
   let location = useLocation();
   let isActive = location.pathname === item.url;
 
@@ -45,6 +53,11 @@ const SideBarTab = ({ item }) => {
         >
           {item.icon}
           <span>{item.title}</span>
+          {item.hasBadge && pendingCount > 0 && (
+            <SidebarMenuBadge className="bg-orange-500 text-white">
+              {pendingCount}
+            </SidebarMenuBadge>
+          )}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -52,6 +65,9 @@ const SideBarTab = ({ item }) => {
 };
 
 export function AppSidebar() {
+  const { data: pendingData } = useGetPendingInvoiceCountQuery();
+  const pendingCount = pendingData?.count || 0;
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -62,7 +78,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="mt-4 text">
               {items.map((item) => (
-                <SideBarTab key={item.url} item={item} />
+                <SideBarTab key={item.url} item={item} pendingCount={pendingCount} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
