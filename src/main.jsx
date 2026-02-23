@@ -21,10 +21,12 @@ import AdminPage from "./pages/admin/admin.page.jsx";
 import SolarUnitEditPage from "./pages/admin/solar-unit-edit.page.jsx";
 import SolarUnitCreatePage from "./pages/admin/solar-unit-create.page.jsx";
 import AdminInvoicesPage from "./pages/admin/invoices.page.jsx";
+import AdminUsersPage from "./pages/admin/users.page.jsx";
 import AnomaliesPage from "./pages/anomalies/anomalies.page.jsx";
 import InvoicesPage from "./pages/invoices/invoices.page.jsx";
 import PaymentPage from "./pages/invoices/payment.page.jsx";
 import PaymentCompletePage from "./pages/invoices/complete.page.jsx";
+import OnboardingPage from "./pages/onboarding/onboarding.page.jsx";
 
 import { store } from "@/lib/redux/store.js";
 import { Provider } from "react-redux";
@@ -50,6 +52,7 @@ createRoot(document.getElementById("root")).render(
                 <Route path="/" element={<HomePage />} />
               </Route>
               <Route element={<ProtectedLayout />}>
+                <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/dashboard/anomalies" element={<AnomaliesPage />} />
@@ -64,6 +67,7 @@ createRoot(document.getElementById("root")).render(
                     <Route path="/admin/solar-units/:id" element={<SolarUnitDetailPage />} />
                     <Route path="/admin/solar-units/:id/edit" element={<SolarUnitEditPage />} />
                     <Route path="/admin/solar-units/create" element={<SolarUnitCreatePage />} />
+                    <Route path="/admin/users" element={<AdminUsersPage />} />
                     <Route path="/admin/invoices" element={<AdminInvoicesPage />} />
                     <Route path="/admin/settings" element={<SettingsPage />} />
                   </Route>

@@ -1,4 +1,4 @@
-import { Settings, Zap, FileText } from "lucide-react";
+import { Settings, Zap, FileText, Users } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import {
   Sidebar,
@@ -18,6 +18,11 @@ const items = [
     title: "Solar Units",
     url: "/admin/solar-units",
     icon: <Zap className="w-8 h-8" size={32} />,
+  },
+  {
+    title: "Users",
+    url: "/admin/users",
+    icon: <Users className="w-8 h-8" size={32} />,
   },
   {
     title: "Invoices",

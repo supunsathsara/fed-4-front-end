@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEditSolarUnitMutation } from "@/lib/redux/query"
-import { useParams } from "react-router"
+import { useParams, useNavigate } from "react-router"
 import { useGetAllUsersQuery } from "@/lib/redux/query"
 
 const formSchema = z.object({
@@ -22,7 +22,7 @@ const formSchema = z.object({
     installationDate: z.string().min(1, { message: "Installation date is required" }),
     capacity: z.number().positive({ message: "Capacity must be a positive number" }),
     status: z.enum(["ACTIVE", "INACTIVE", "MAINTENANCE"], { message: "Please select a valid status" }),
-    userId: z.string().min(1, { message: "User ID is required" }),
+    userId: z.string().optional(),
 });
 
 export function EditSolarUnitForm({ solarUnit }) {
@@ -33,22 +33,25 @@ export function EditSolarUnitForm({ solarUnit }) {
             installationDate: solarUnit.installationDate,
             capacity: solarUnit.capacity,
             status: solarUnit.status,
-            userId: solarUnit.userId,
+            userId: typeof solarUnit.userId === 'object' ? solarUnit.userId?._id : solarUnit.userId || "",
         },
     })
 
     const { id } = useParams();
+    const navigate = useNavigate();
 
     const [editSolarUnit, { isLoading: isEditingSolarUnit }] = useEditSolarUnitMutation();
 
-    const { data: users, isLoading: isLoadingUsers, isError: isErrorUsers, error: errorUsers } = useGetAllUsersQuery();
-
-
-    console.log(users);
+    const { data: users, isLoading: isLoadingUsers } = useGetAllUsersQuery();
 
     async function onSubmit(values) {
         try {
-            await editSolarUnit({ id, data: values }).unwrap();
+            const data = { ...values };
+            if (!data.userId) {
+                delete data.userId;
+            }
+            await editSolarUnit({ id, data }).unwrap();
+            navigate(`/admin/solar-units/${id}`);
         } catch (error) {
             console.error(error);
         }

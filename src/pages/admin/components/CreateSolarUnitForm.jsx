@@ -13,25 +13,38 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useCreateSolarUnitMutation } from "@/lib/redux/query"
+import { useCreateSolarUnitMutation, useGetUnassignedUsersQuery } from "@/lib/redux/query"
+import { useNavigate } from "react-router"
 
 const formSchema = z.object({
     serialNumber: z.string().min(1, { message: "Serial number is required" }),
     installationDate: z.string().min(1, { message: "Installation date is required" }),
     capacity: z.number().positive({ message: "Capacity must be a positive number" }),
     status: z.enum(["ACTIVE", "INACTIVE", "MAINTENANCE"], { message: "Please select a valid status" }),
+    userId: z.string().optional(),
 });
 
 export function CreateSolarUnitForm() {
     const form = useForm({
         resolver: zodResolver(formSchema),
+        defaultValues: {
+            userId: "",
+        },
     })
 
+    const navigate = useNavigate();
     const [createSolarUnit, { isLoading: isCreatingSolarUnit }] = useCreateSolarUnitMutation();
+    const { data: unassignedUsers, isLoading: isLoadingUsers } = useGetUnassignedUsersQuery();
 
     async function onSubmit(values) {
         try {
-            await createSolarUnit(values).unwrap();
+            // Remove userId if empty (not selected)
+            const data = { ...values };
+            if (!data.userId) {
+                delete data.userId;
+            }
+            await createSolarUnit(data).unwrap();
+            navigate("/admin/solar-units");
         } catch (error) {
             console.error(error);
         }
@@ -60,7 +73,7 @@ export function CreateSolarUnitForm() {
                         <FormItem>
                             <FormLabel>Installation Date</FormLabel>
                             <FormControl>
-                                <Input placeholder="Installation Date" {...field} />
+                                <Input type="date" placeholder="Installation Date" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -71,10 +84,11 @@ export function CreateSolarUnitForm() {
                     name="capacity"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Capacity</FormLabel>
+                            <FormLabel>Capacity (Watts)</FormLabel>
                             <FormControl>
                                 <Input type="number" placeholder="Capacity" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
                             </FormControl>
+                            <FormDescription>Enter capacity in Watts (e.g. 5000 for 5kW)</FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -97,6 +111,37 @@ export function CreateSolarUnitForm() {
                                     </SelectContent>
                                 </Select>
                             </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="userId"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Assign to User (Optional)</FormLabel>
+                            <FormControl>
+                                <Select value={field.value || ""} onValueChange={field.onChange}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a user to assign" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {isLoadingUsers ? (
+                                            <SelectItem value="__loading" disabled>Loading users...</SelectItem>
+                                        ) : unassignedUsers?.length === 0 ? (
+                                            <SelectItem value="__empty" disabled>No unassigned users available</SelectItem>
+                                        ) : (
+                                            unassignedUsers?.map((user) => (
+                                                <SelectItem key={user._id} value={user._id}>
+                                                    {user.email}{user.firstName ? ` (${user.firstName} ${user.lastName || ''})` : ''}
+                                                </SelectItem>
+                                            ))
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </FormControl>
+                            <FormDescription>You can assign a user now or later from the solar unit detail page</FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}

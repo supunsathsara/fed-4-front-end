@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useGetSolarUnitsQuery } from "@/lib/redux/query";
-import { Zap } from "lucide-react";
+import { Zap, User } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Link } from "react-router";
@@ -21,12 +21,11 @@ export function SolarUnitsTab() {
     return <div>Error: {errorSolarUnits.message}</div>;
   }
 
-  console.log(solarUnits);
-
-
   const filteredUnits = searchTerm !== "" ? solarUnits.filter(
     (unit) =>
-      unit.serialNumber.toLowerCase().includes(searchTerm.toLowerCase())) : solarUnits;
+      unit.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (unit.userId?.email && unit.userId.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  ) : solarUnits;
 
   return (
     <div className="space-y-6">
@@ -38,7 +37,7 @@ export function SolarUnitsTab() {
 
       <div className="w-full max-w-md">
         <Input
-          placeholder="Search solar units..."
+          placeholder="Search by serial number or user email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -55,9 +54,11 @@ export function SolarUnitsTab() {
                 </div>
               </div>
               <div
-                className={`px-3 py-1 rounded-full text-xs font-medium ${unit.status === "Active"
+                className={`px-3 py-1 rounded-full text-xs font-medium ${unit.status === "ACTIVE"
                   ? "bg-green-100 text-green-800"
-                  : "bg-gray-100 text-gray-800"
+                  : unit.status === "MAINTENANCE"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-gray-100 text-gray-800"
                   }`}
               >
                 {unit.status}
@@ -68,8 +69,24 @@ export function SolarUnitsTab() {
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Capacity</p>
                 <p className="text-lg font-semibold text-foreground">
-                  {unit.capacity}
+                  {(unit.capacity / 1000).toFixed(1)} kW
                 </p>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <User className="w-3.5 h-3.5 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground">Assigned User</p>
+                </div>
+                {unit.userId ? (
+                  <p className="text-sm font-medium text-foreground">
+                    {unit.userId.email}
+                    {unit.userId.firstName && (
+                      <span className="text-muted-foreground font-normal"> ({unit.userId.firstName} {unit.userId.lastName || ''})</span>
+                    )}
+                  </p>
+                ) : (
+                  <p className="text-sm text-orange-600 font-medium">Not Assigned</p>
+                )}
               </div>
               <div className="flex gap-2 pt-2">
                 <Button

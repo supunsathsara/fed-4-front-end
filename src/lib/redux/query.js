@@ -5,7 +5,7 @@ const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"
 // Define a service using a base URL and expected endpoints
 export const api = createApi({
   reducerPath: "api",
-  tagTypes: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats', 'Invoices', 'InvoiceCounts'],
+  tagTypes: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats', 'Invoices', 'InvoiceCounts', 'SolarUnits', 'Users'],
   baseQuery: fetchBaseQuery({ baseUrl: baseUrl, prepareHeaders: async (headers) => {
     const clerk = window.Clerk;
     if (clerk) {
@@ -22,12 +22,15 @@ export const api = createApi({
     }),
     getSolarUnitForUser: build.query({
       query: () => `/solar-units/me`,
+      providesTags: ['SolarUnits'],
     }),
     getSolarUnits: build.query({
       query: () => `/solar-units`,
+      providesTags: ['SolarUnits'],
     }),
     getSolarUnitById: build.query({
       query: (id) => `/solar-units/${id}`,
+      providesTags: ['SolarUnits'],
     }),
     createSolarUnit: build.mutation({
       query: (data) => ({
@@ -35,6 +38,7 @@ export const api = createApi({
         method: "POST",
         body: data,
       }),
+      invalidatesTags: ['SolarUnits', 'Users'],
     }),
     editSolarUnit: build.mutation({
       query: ({id, data}) => ({
@@ -42,12 +46,72 @@ export const api = createApi({
         method: "PUT",
         body: data,
       }),
+      invalidatesTags: ['SolarUnits', 'Users'],
+    }),
+    assignSolarUnit: build.mutation({
+      query: ({id, userId}) => ({
+        url: `/solar-units/${id}/assign`,
+        method: "PATCH",
+        body: { userId },
+      }),
+      invalidatesTags: ['SolarUnits', 'Users'],
+    }),
+    unassignSolarUnit: build.mutation({
+      query: (id) => ({
+        url: `/solar-units/${id}/unassign`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ['SolarUnits', 'Users'],
     }),
     getAllUsers: build.query({
       query: () => `/users`,
+      providesTags: ['Users'],
+    }),
+    getUnassignedUsers: build.query({
+      query: () => `/users/unassigned`,
+      providesTags: ['Users'],
+    }),
+    getUsersWithStatus: build.query({
+      query: () => `/users/with-status`,
+      providesTags: ['Users'],
+    }),
+    getPendingUsers: build.query({
+      query: () => `/users/pending`,
+      providesTags: ['Users'],
     }),
     getCurrentUser: build.query({
       query: () => `/users/me`,
+      providesTags: ['Users'],
+    }),
+    approveUser: build.mutation({
+      query: (id) => ({
+        url: `/users/${id}/approve`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ['Users'],
+    }),
+    rejectUser: build.mutation({
+      query: ({ id, reason }) => ({
+        url: `/users/${id}/reject`,
+        method: "PATCH",
+        body: { reason },
+      }),
+      invalidatesTags: ['Users'],
+    }),
+    suspendUser: build.mutation({
+      query: ({ id, reason }) => ({
+        url: `/users/${id}/suspend`,
+        method: "PATCH",
+        body: { reason },
+      }),
+      invalidatesTags: ['Users'],
+    }),
+    reactivateUser: build.mutation({
+      query: (id) => ({
+        url: `/users/${id}/reactivate`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ['Users'],
     }),
     getWeatherData: build.query({
       query: (params) => {
@@ -179,13 +243,22 @@ export const api = createApi({
 // auto-generated based on the defined endpoints
 export const { 
   useGetAllUsersQuery,
+  useGetUnassignedUsersQuery,
+  useGetUsersWithStatusQuery,
+  useGetPendingUsersQuery,
   useGetCurrentUserQuery,
+  useApproveUserMutation,
+  useRejectUserMutation,
+  useSuspendUserMutation,
+  useReactivateUserMutation,
   useGetEnergyGenerationRecordsBySolarUnitQuery, 
   useGetSolarUnitForUserQuery, 
   useGetSolarUnitsQuery, 
   useGetSolarUnitByIdQuery, 
   useCreateSolarUnitMutation, 
   useEditSolarUnitMutation,
+  useAssignSolarUnitMutation,
+  useUnassignSolarUnitMutation,
   useGetWeatherDataQuery,
   useGetCapacityFactorQuery,
   // Anomaly hooks
