@@ -1,4 +1,4 @@
-import { Settings, Zap, FileText, Users } from "lucide-react";
+import { Settings, Zap, FileText, Users, Activity } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import {
   Sidebar,
@@ -28,6 +28,11 @@ const items = [
     title: "Invoices",
     url: "/admin/invoices",
     icon: <FileText className="w-8 h-8" size={32} />,
+  },
+  {
+    title: "Audit Logs",
+    url: "/admin/audit-logs",
+    icon: <Activity className="w-8 h-8" size={32} />,
   },
   {
     title: "Settings",

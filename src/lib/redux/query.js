@@ -5,7 +5,7 @@ const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"
 // Define a service using a base URL and expected endpoints
 export const api = createApi({
   reducerPath: "api",
-  tagTypes: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats', 'Invoices', 'InvoiceCounts', 'SolarUnits', 'Users'],
+  tagTypes: ['Anomalies', 'AnomalyStats', 'AdminAnomalies', 'AdminAnomalyStats', 'Invoices', 'InvoiceCounts', 'SolarUnits', 'Users', 'AuditLogs'],
   baseQuery: fetchBaseQuery({ baseUrl: baseUrl, prepareHeaders: async (headers) => {
     const clerk = window.Clerk;
     if (clerk) {
@@ -236,6 +236,26 @@ export const api = createApi({
     getSessionStatus: build.query({
       query: (sessionId) => `/payments/session-status?session_id=${sessionId}`,
     }),
+    // Audit log endpoints
+    getAuditLogs: build.query({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.action) searchParams.append('action', params.action);
+        if (params?.targetType) searchParams.append('targetType', params.targetType);
+        if (params?.limit) searchParams.append('limit', params.limit);
+        if (params?.offset) searchParams.append('offset', params.offset);
+        return `/audit-logs?${searchParams.toString()}`;
+      },
+      providesTags: ['AuditLogs'],
+    }),
+    getAuditLogStats: build.query({
+      query: () => `/audit-logs/stats`,
+      providesTags: ['AuditLogs'],
+    }),
+    getAuditLogsForTarget: build.query({
+      query: ({ targetType, targetId }) => `/audit-logs/target/${targetType}/${targetId}`,
+      providesTags: ['AuditLogs'],
+    }),
   }),
 });
 
@@ -280,4 +300,8 @@ export const {
   // Payment hooks
   useCreatePaymentSessionMutation,
   useGetSessionStatusQuery,
+  // Audit log hooks
+  useGetAuditLogsQuery,
+  useGetAuditLogStatsQuery,
+  useGetAuditLogsForTargetQuery,
 } = api;
