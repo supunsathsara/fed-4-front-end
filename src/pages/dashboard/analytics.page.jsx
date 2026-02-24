@@ -7,6 +7,7 @@ import {
   useGetInvoicesQuery,
 } from "@/lib/redux/query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -193,16 +194,64 @@ export default function AnalyticsPage() {
   // ─── Loading State ─────────────────────────────────────────
   if (loadingUnit || loadingEnergy) {
     return (
-      <main className="p-4 pb-8 space-y-6">
-        <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+      <main className="mt-4 pb-8 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-9 w-32 rounded-md" />
+        </div>
+
+        {/* Stat cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="pt-6">
-                <div className="h-16 bg-muted rounded" />
+            <Card key={i}>
+              <CardContent className="pt-6 space-y-3">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-4 w-20" />
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Main chart */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-4 w-56 mt-1" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-64 w-full rounded-lg" />
+          </CardContent>
+        </Card>
+
+        {/* Two-column charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader><Skeleton className="h-5 w-36" /></CardHeader>
+            <CardContent><Skeleton className="h-48 w-full rounded-lg" /></CardContent>
+          </Card>
+          <Card>
+            <CardHeader><Skeleton className="h-5 w-36" /></CardHeader>
+            <CardContent><Skeleton className="h-48 w-full rounded-lg" /></CardContent>
+          </Card>
+        </div>
+
+        {/* Bottom row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader><Skeleton className="h-5 w-32" /></CardHeader>
+            <CardContent className="space-y-2">
+              {[1,2,3].map(i => <Skeleton key={i} className="h-8 w-full rounded" />)}
+            </CardContent>
+          </Card>
+          <Card className="lg:col-span-2">
+            <CardHeader><Skeleton className="h-5 w-32" /></CardHeader>
+            <CardContent><Skeleton className="h-40 w-full rounded-lg" /></CardContent>
+          </Card>
         </div>
       </main>
     );
