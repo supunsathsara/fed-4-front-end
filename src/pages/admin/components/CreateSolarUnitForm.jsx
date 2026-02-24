@@ -13,8 +13,18 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { useCreateSolarUnitMutation, useGetUnassignedUsersQuery } from "@/lib/redux/query"
 import { useNavigate } from "react-router"
+import { useState } from "react"
+import { Copy, Check, Key } from "lucide-react"
 
 const formSchema = z.object({
     serialNumber: z.string().min(1, { message: "Serial number is required" }),
@@ -35,6 +45,9 @@ export function CreateSolarUnitForm() {
     const navigate = useNavigate();
     const [createSolarUnit, { isLoading: isCreatingSolarUnit }] = useCreateSolarUnitMutation();
     const { data: unassignedUsers, isLoading: isLoadingUsers } = useGetUnassignedUsersQuery();
+    const [deviceApiKey, setDeviceApiKey] = useState(null);
+    const [showKeyDialog, setShowKeyDialog] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     async function onSubmit(values) {
         try {
@@ -43,14 +56,35 @@ export function CreateSolarUnitForm() {
             if (!data.userId) {
                 delete data.userId;
             }
-            await createSolarUnit(data).unwrap();
-            navigate("/admin/solar-units");
+            const result = await createSolarUnit(data).unwrap();
+
+            if (result.deviceApiKey) {
+                setDeviceApiKey(result.deviceApiKey);
+                setShowKeyDialog(true);
+            } else {
+                navigate("/admin/solar-units");
+            }
         } catch (error) {
             console.error(error);
         }
     }
 
+    function handleCopyKey() {
+        if (deviceApiKey) {
+            navigator.clipboard.writeText(deviceApiKey);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    }
+
+    function handleKeyDialogClose() {
+        setShowKeyDialog(false);
+        setDeviceApiKey(null);
+        navigate("/admin/solar-units");
+    }
+
     return (
+        <>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <FormField
@@ -149,5 +183,43 @@ export function CreateSolarUnitForm() {
                 <Button type="submit" disabled={isCreatingSolarUnit}>{isCreatingSolarUnit ? "Creating..." : "Create"}</Button>
             </form>
         </Form>
+
+        <Dialog open={showKeyDialog} onOpenChange={(open) => { if (!open) handleKeyDialogClose(); }}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Key className="w-5 h-5 text-yellow-500" />
+                        Device API Key Generated
+                    </DialogTitle>
+                    <DialogDescription>
+                        This is the <strong>only time</strong> this key will be shown. Copy it now and flash it to the IoT device firmware (ESP32, Raspberry Pi, etc.).
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="my-4">
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg font-mono text-sm break-all">
+                        <span className="flex-1">{deviceApiKey}</span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleCopyKey}
+                            className="shrink-0"
+                        >
+                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                        </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                        The device sends this key as the <code className="bg-muted px-1 rounded">X-API-Key</code> header with every reading.
+                    </p>
+                </div>
+
+                <DialogFooter>
+                    <Button onClick={handleKeyDialogClose}>
+                        I've saved the key
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </>
     );
 }

@@ -63,6 +63,13 @@ export const api = createApi({
       }),
       invalidatesTags: ['SolarUnits', 'Users'],
     }),
+    rotateDeviceApiKey: build.mutation({
+      query: (id) => ({
+        url: `/solar-units/${id}/rotate-key`,
+        method: "POST",
+      }),
+      invalidatesTags: ['SolarUnits'],
+    }),
     getAllUsers: build.query({
       query: () => `/users`,
       providesTags: ['Users'],
@@ -279,6 +286,7 @@ export const {
   useEditSolarUnitMutation,
   useAssignSolarUnitMutation,
   useUnassignSolarUnitMutation,
+  useRotateDeviceApiKeyMutation,
   useGetWeatherDataQuery,
   useGetCapacityFactorQuery,
   // Anomaly hooks

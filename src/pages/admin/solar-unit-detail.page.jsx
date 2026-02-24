@@ -3,9 +3,29 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Zap, Calendar, Gauge, User, UserPlus, UserMinus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, Zap, Calendar, Gauge, User, UserPlus, UserMinus, Key, Copy, Check, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
-import { useGetSolarUnitByIdQuery, useGetUnassignedUsersQuery, useAssignSolarUnitMutation, useUnassignSolarUnitMutation } from "@/lib/redux/query";
+import { useGetSolarUnitByIdQuery, useGetUnassignedUsersQuery, useAssignSolarUnitMutation, useUnassignSolarUnitMutation, useRotateDeviceApiKeyMutation } from "@/lib/redux/query";
 import { useState } from "react";
 
 export default function SolarUnitDetailPage() {
@@ -18,6 +38,11 @@ export default function SolarUnitDetailPage() {
   const { data: unassignedUsers, isLoading: isLoadingUsers } = useGetUnassignedUsersQuery(undefined, { skip: !showAssignForm });
   const [assignSolarUnit, { isLoading: isAssigning }] = useAssignSolarUnitMutation();
   const [unassignSolarUnit, { isLoading: isUnassigning }] = useUnassignSolarUnitMutation();
+
+    const [rotateDeviceApiKey, { isLoading: isRotating }] = useRotateDeviceApiKeyMutation();
+  const [newApiKey, setNewApiKey] = useState(null);
+  const [showKeyDialog, setShowKeyDialog] = useState(false);
+  const [copied, setCopied] = useState(false);
   
   if (isLoadingSolarUnit) {
     return <div>Loading...</div>;
@@ -29,6 +54,26 @@ export default function SolarUnitDetailPage() {
 
   const handleEdit = () => {
     navigate(`/admin/solar-units/${solarUnit._id}/edit`);
+  };
+
+  const handleRotateKey = async () => {
+    try {
+      const result = await rotateDeviceApiKey(solarUnit._id).unwrap();
+      if (result.deviceApiKey) {
+        setNewApiKey(result.deviceApiKey);
+        setShowKeyDialog(true);
+      }
+    } catch (error) {
+      console.error("Failed to rotate key:", error);
+    }
+  };
+
+  const handleCopyKey = () => {
+    if (newApiKey) {
+      navigator.clipboard.writeText(newApiKey);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleDelete = () => {
@@ -264,6 +309,54 @@ export default function SolarUnitDetailPage() {
               </div>
             </div>
           </Card>
+
+          {/* Device API Key */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Device API Key</h2>
+              <Badge variant="outline" className="gap-1">
+                <Key className="w-3 h-3" />
+                IoT Auth
+              </Badge>
+            </div>
+            <Separator className="my-4" />
+
+            <p className="text-sm text-muted-foreground mb-4">
+              The device API key is used by IoT hardware (ESP32, Raspberry Pi, etc.) to authenticate when sending energy readings. The key is sent as the <code className="bg-muted px-1 rounded text-xs">X-API-Key</code> header.
+            </p>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                <Key className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="font-mono text-sm text-muted-foreground">
+                  sp_dev_••••••••••••••••
+                </span>
+              </div>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2" disabled={isRotating}>
+                    <RotateCcw className="w-4 h-4" />
+                    {isRotating ? "Rotating..." : "Rotate Key"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Rotate Device API Key?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will invalidate the current API key immediately. The IoT device will stop sending data until the new key is flashed to its firmware. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRotateKey}>
+                      Rotate Key
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </Card>
         </div>
 
         {/* Actions Sidebar */}
@@ -288,6 +381,43 @@ export default function SolarUnitDetailPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={showKeyDialog} onOpenChange={(open) => { if (!open) { setShowKeyDialog(false); setNewApiKey(null); } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-yellow-500" />
+              New Device API Key
+            </DialogTitle>
+            <DialogDescription>
+              This is the <strong>only time</strong> the new key will be shown. Copy it and flash it to the device firmware.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="my-4">
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg font-mono text-sm break-all">
+              <span className="flex-1">{newApiKey}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopyKey}
+                className="shrink-0"
+              >
+                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              The old key has been invalidated. The device will reject requests with the old key.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => { setShowKeyDialog(false); setNewApiKey(null); }}>
+              I've saved the key
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
